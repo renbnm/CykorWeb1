@@ -1,0 +1,5 @@
+CREATE TABLE users {
+    name VARCHAR(20) NOT NULL,
+    password VARCHAR(30) NOT NULL,
+    created_t TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+};
