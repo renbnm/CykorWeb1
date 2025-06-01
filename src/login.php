@@ -14,7 +14,8 @@
             <input type="password" name="pw" class="pw" placeholder="password" required>
         </div>
         <button type="submit" class="btn" onclick="button()">로그인</button>
-        <a href="register.php" class="btn">회원가입</a>
+
+        <button type="button" class="btn" onclick="location.href='register.php'">회원가입</button>
     </form>
 </body>
 </html>
