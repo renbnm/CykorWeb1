@@ -6,7 +6,6 @@ services:
     volumes:
       - ./src:/var/www/html
 
-
   db:
     image: mysql:8.0
     restart: always
@@ -15,6 +14,8 @@ services:
       MYSQL_DATABASE: user_info
     volumes:
       - db_data:/var/lib/mysql
+      - ./dataTable.sql:/docker-entrypoint-initdb.d/dataTable.sql
+
 
 volumes:
-    db_data:
+  db_data:

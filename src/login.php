@@ -5,7 +5,7 @@
     <title>LOGIN</title>
 </head>
 <body>
-    <form method="post" action="check_login.php" class="loginForm">
+    <form method="post" action="login_check.php" class="loginForm">
         <h2>Login</h2>
         <div class="idform">
             <input type="text" name="name" class="name" placeholder="username" required>
