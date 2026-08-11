@@ -59,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $_POST['action'] == 'update_bio') {
 $sql_user = "SELECT id, username, bio FROM users WHERE id = '$user_id'";
 $result_user = mysqli_query($connect, $sql_user);
 $user = mysqli_fetch_assoc($result_user);
-$bio_edit = isset($_GET['edit_bio']) ? 1 : 0;
 
 if (!$user) {
     echo "<script>alert('사용자가 존재하지 않습니다.'); location.href='index.php';</script>";
@@ -78,37 +77,53 @@ $result_post = mysqli_query($connect, $sql_post);
 </head>
 <body>
 <h1><?php echo $user['username']; ?>의 프로필</h1>
-<p>자기소개: <?php echo $user['bio']; ?></p>
-    <?php if ($user_id == $_SESSION['id'] && (!$bio_edit)): ?>
-    <button type="button"
-        onclick="location.href='profile.php?id=<?php echo $user_id; ?>&edit_bio=1'">
-        자기소개 수정
-    </button>
+<p id="bio-text">
+    자기소개: <?php echo nl2br(htmlspecialchars($user['bio'])); ?>
+</p>
 
-    <?php elseif ($user_id == $_SESSION['id']): ?>
-        <form method="post" action="profile.php?id=<?php echo $user_id; ?>">
-            <input type="hidden" name="action" value="update_bio">
+<?php if ($user_id == $_SESSION['id']): ?>
+    <button type="button" id="edit-bio-button">자기소개 수정</button>
+
+    <form id="bio-form" method="post"
+          action="profile.php?id=<?php echo $user_id; ?>" hidden>
+
+        <input type="hidden" name="action" value="update_bio">
+
         <p>
             <textarea name="bio" rows="5" cols="50"><?php
                 echo htmlspecialchars($user['bio']);
             ?></textarea>
         </p>
-            <button type="submit">저장</button>
-            <button type="button"
-                onclick="location.href='profile.php?id=<?php echo $user_id; ?>'">
-                취소
-            </button>
-        </form>
-    <?php endif; ?>
 
-    <?php if ($user_id != $_SESSION['id']): ?>
+        <button type="submit">저장</button>
+        <button type="button" id="cancel-bio-button">취소</button>
+    </form>
+
+    <script>
+        const editButton = document.getElementById('edit-bio-button');
+        const bioForm = document.getElementById('bio-form');
+        const cancelButton = document.getElementById('cancel-bio-button');
+
+        editButton.addEventListener('click', () => {
+            bioForm.hidden = false;
+            editButton.hidden = true;
+        });
+
+        cancelButton.addEventListener('click', () => {
+            bioForm.hidden = true;
+            editButton.hidden = false;
+        });
+    </script>
+<?php endif; ?>    
+
+<?php if ($user_id != $_SESSION['id']): ?>
     <form method="post" action="profile.php?id=<?php echo $user_id; ?>">
         <input type="hidden" name="action" value="friend_request">
         <input type="hidden" name="receiver_id" value="<?php echo $user_id; ?>">
         <button type="submit">친구 요청 보내기</button>
     </form>
-    <?php endif; ?>
-    
+<?php endif; ?>
+
 <h2>게시글</h2>
 <ul>
 <table border="1">
