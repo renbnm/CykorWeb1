@@ -7,7 +7,8 @@ if (!isset($_SESSION['id'])) {
     exit;
 }
 
-$name = $_SESSION['id'];
+$name = $_SESSION['name'];
+$username = $_SESSION['username'];
 $sql = 'SELECT * FROM posts ORDER BY id DESC';
 $result = mysqli_query($connect, $sql);
 ?>
@@ -20,7 +21,7 @@ $result = mysqli_query($connect, $sql);
 <body>
     <header>
         <button type="button" onclick="location.href='logout.php'">로그아웃</button>
-        <h2><?php echo "반갑습니다. $name 님" ?></h2>
+        <h2><?php echo "반갑습니다. $username 님" ?></h2>
     </header>
 
     <h1>게시판</h1>
@@ -39,7 +40,7 @@ $result = mysqli_query($connect, $sql);
             while ($posts = mysqli_fetch_assoc($result)) {
                 $num = $posts['id'];
                 $title = $posts['title'];
-                $author = $posts['author'];
+                $author = $posts['author_name'];
                 $date = $posts['created_at'];
                 echo "<tr><td>{$num}</td><td><a href='board_view.php?id={$num}'>{$title}</a></td><td>{$author}</td><td>{$date}</td></tr>";
             }

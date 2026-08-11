@@ -22,7 +22,7 @@ if (!$post) {
     exit;
 }
 
-if ($post['author'] != $_SESSION['id']) {
+if ($post['author_id'] != $_SESSION['id']) {
     echo "<script>alert('권한이 없습니다.'); history.back();</script>";
     exit;
 }

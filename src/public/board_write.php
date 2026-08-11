@@ -10,7 +10,7 @@ if (!isset($_SESSION['id'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $title = trim($_POST['title']);
     $content = trim($_POST['content']);
-    $author = $_SESSION['id'];
+    $author = $_SESSION['username'];
 
     if (empty($title)) {
         echo "<script>alert('제목이 비어 있습니다.'); history.back();</script>";
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    $sql = "INSERT INTO posts (title, content, author) VALUES ('$title', '$content', '$author')";
+    $sql = "INSERT INTO posts (title, content, author_id, author_name) VALUES ('$title', '$content', '{$_SESSION['id']}', '$author')";
     $result = mysqli_query($connect, $sql);
 
     if ($result) {

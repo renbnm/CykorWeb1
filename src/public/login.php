@@ -18,8 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $result = mysqli_query($connect, $sql_query);
 
     if ($user = mysqli_fetch_assoc($result)) {
-        $_SESSION['id'] = $user['name'];
         echo "<script>alert('로그인 성공'); location.href='index.php';</script>";
+        $_SESSION['id'] = $user['id'];
+        $_SESSION['name'] = $user['name'];
+        $_SESSION['username'] = $user['username'];
         exit;
     } else {
         echo "<script>alert('로그인 실패, 로그인 정보를 다시 확인해 주세요.'); history.back();</script>";

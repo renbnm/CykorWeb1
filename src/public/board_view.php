@@ -18,7 +18,8 @@ if (!$post) {
 }
 
 $title = $post['title'];
-$author = $post['author'];
+$author_id = $post['author_id'];
+$author_name = $post['author_name'];
 $date = $post['created_at'];
 $content = $post['content'];
 ?>
@@ -32,7 +33,7 @@ $content = $post['content'];
 <body>
     <h1><?php echo $title; ?></h1>
     <?php
-    if ($author == $_SESSION['id']) {
+    if ($author_id == $_SESSION['id']) {
         echo "<form method='post' action='board_delete.php' style='display:inline;'>";
         echo "<input type='hidden' name='id' value='{$num}'>";
         echo "<button type='submit'>게시물 삭제</button></form>";
@@ -40,7 +41,7 @@ $content = $post['content'];
     }
     ?>
     <div class="meta">
-        <p><strong>작성자: </strong><?php echo $author; ?></p>
+        <p><strong>작성자: </strong><?php echo $author_name; ?></p>
         <p><strong>작성시각: </strong><?php echo $date; ?></p>
     </div>
     <div><?php echo nl2br($content); ?></div>

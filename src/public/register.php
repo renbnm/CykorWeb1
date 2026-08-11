@@ -5,9 +5,13 @@ include __DIR__ . '/../app/db_connect.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = trim($_POST['name']);
     $pass = trim($_POST['pw']);
+    $username = trim($_POST['username']);
 
     if (empty($name)) {
         echo "<script>alert('아이디를 입력해 주세요.'); history.back();</script>";
+        exit;
+    } else if (empty($username)) {
+        echo "<script>alert('사용자 이름을 입력해 주세요.'); history.back();</script>";
         exit;
     } else if (empty($pass)) {
         echo "<script>alert('비밀번호를 입력해 주세요.'); history.back();</script>";
@@ -22,7 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    $sql_insert = "INSERT INTO users (name, password) VALUES ('$name', '$pass')";
+    $sql_query = "SELECT * FROM users WHERE username = '$username'";
+    $result = mysqli_query($connect, $sql_query);
+
+    if (mysqli_fetch_assoc($result)) {
+        echo "<script>alert('이미 존재하는 사용자 이름입니다.'); history.back();</script>";
+        exit;
+    }
+
+    $sql_insert = "INSERT INTO users (name, username, password) VALUES ('$name', '$username', '$pass')";
     $insert_result = mysqli_query($connect, $sql_insert);
 
     if ($insert_result) {
@@ -43,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <h1>회원가입</h1>
     <form action="register.php" method="post">
         <p><label>아이디: <input type="text" name="name" required></label></p>
+        <p><label>사용자 이름: <input type="text" name="username" required></label></p>
         <p><label>비밀번호: <input type="password" name="pw" required></label></p>
         <button type="submit">가입하기</button>
     </form>
