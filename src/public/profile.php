@@ -76,6 +76,7 @@ $result_post = mysqli_query($connect, $sql_post);
     <title><?php echo $user['username']; ?>의 프로필</title>
 </head>
 <body>
+<button type="button" onclick="location.href='index.php'">홈으로</button>
 <h1><?php echo $user['username']; ?>의 프로필</h1>
 <p id="bio-text">
     자기소개: <?php echo nl2br(htmlspecialchars($user['bio'])); ?>
@@ -114,6 +115,7 @@ $result_post = mysqli_query($connect, $sql_post);
             editButton.hidden = false;
         });
     </script>
+    <button type="button" onclick="location.href='friends.php'">친구 목록</button>
 <?php endif; ?>    
 
 <?php if ($user_id != $_SESSION['id']): ?>

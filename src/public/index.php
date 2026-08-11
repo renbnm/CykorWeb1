@@ -21,8 +21,9 @@ $result = mysqli_query($connect, $sql);
 <body>
     <header>
         <button type="button" onclick="location.href='logout.php'">로그아웃</button>
-        <h2><?php echo "반갑습니다. $username 님" ?></h2>
         <button type="button" onclick="location.href='profile.php?id=<?php echo $_SESSION['id']; ?>'">프로필</button>
+        <button type="button" onclick="location.href='friends.php'">친구 목록</button>
+        <h2><?php echo "반갑습니다. $username 님" ?></h2>
     </header>
 
     </header>
