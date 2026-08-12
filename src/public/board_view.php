@@ -7,8 +7,8 @@ if (!isset($_SESSION['id'])) {
     exit;
 }
 
-$num = $_GET['id'];
-$sql = "SELECT * FROM posts WHERE id = '$num'";
+$id = $_GET['id'];
+$sql = "SELECT * FROM posts WHERE id = '$id'";
 $result = mysqli_query($connect, $sql);
 $post = mysqli_fetch_assoc($result);
 
@@ -35,13 +35,13 @@ $content = $post['content'];
     <?php
     if ($author_id == $_SESSION['id']) {
         echo "<form method='post' action='board_delete.php' style='display:inline;'>";
-        echo "<input type='hidden' name='id' value='{$num}'>";
+        echo "<input type='hidden' name='id' value='{$id}'>";
         echo "<button type='submit'>게시물 삭제</button></form>";
-        echo "<button type='button' onclick=\"location.href='board_edit.php?id={$num}'\">게시물 수정</button>";
+        echo "<button type='button' onclick=\"location.href='board_edit.php?id={$id}'\">게시물 수정</button>";
     }
     ?>
     <div class="meta">
-        <p><strong>작성자: </strong><?php echo $author_name; ?></p>
+        <p><strong>작성자:<a href="profile.php?id=<?php echo $author_id; ?>"><?php echo htmlspecialchars($author_name); ?></a></strong></p>
         <p><strong>작성시각: </strong><?php echo $date; ?></p>
     </div>
     <div><?php echo nl2br($content); ?></div>
