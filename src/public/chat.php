@@ -66,3 +66,32 @@ $sql_messages = "SELECT * FROM chat_message
 $result_messages = mysqli_query($connect, $sql_messages);
 
 ?>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title><?php echo htmlspecialchars($user['username']); ?>님과의 채팅</title>
+</head>
+<body>
+    <button type="button" onclick="history.back()">뒤로</button>
+
+    <h1><?php echo htmlspecialchars($user['username']); ?>님과의 채팅</h1>
+
+    <div id="message-list">
+        <?php if (mysqli_num_rows($result_messages) === 0): ?>
+            <p>아직 대화 내역이 없습니다.</p>
+        <?php else: ?>
+            <?php while ($message = mysqli_fetch_assoc($result_messages)): ?>
+                <div>
+                    <strong>
+                        <?php echo htmlspecialchars($message['username']); ?>
+                    </strong>
+                    <span><?php echo htmlspecialchars($message['message_created_at']); ?></span>
+                    <p><?php echo nl2br(htmlspecialchars($message['content'])); ?></p>
+                </div>
+                <hr>
+            <?php endwhile; ?>
+        <?php endif; ?>
+    </div>
+</body>
+</html>
