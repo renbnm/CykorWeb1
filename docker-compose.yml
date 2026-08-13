@@ -9,6 +9,17 @@ services:
       db:
         condition: service_healthy
 
+  chat:
+    build: .
+    command: php /var/www/chat/chat_server.php start
+    ports:
+      - "8282:8282"
+    volumes:
+      - ./src:/var/www
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: mysql:8.0
     restart: always

@@ -42,11 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    $sql_update = "UPDATE posts SET title = '$title', content = '$content' WHERE id = '$num'";
+    $sql_update = "UPDATE posts SET title = '$title', content = '$content' WHERE id = '$id'";
     $result_update = mysqli_query($connect, $sql_update);
 
     if ($result_update) {
-        echo "<script>alert('수정이 완료되었습니다.'); location.href='board_view.php?id={$num}';</script>";
+        echo "<script>alert('수정이 완료되었습니다.'); location.href='board_view.php?id={$id}';</script>";
     } else {
         echo "<script>alert('수정에 실패했습니다.'); history.back();</script>";
     }
@@ -62,11 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <h1>게시글 수정</h1>
     <form method="post" action="board_edit.php">
-        <input type="hidden" name="id" value="<?php echo $num; ?>">
+        <input type="hidden" name="id" value="<?php echo $id; ?>">
         <p>제목: <input type="text" name="title" value="<?php echo $title; ?>"></p>
         <p>내용:<br><textarea name="content" rows="10" cols="100"><?php echo $content; ?></textarea></p>
         <button type="submit">수정</button>
-        <button type="button" onclick="location.href='board_view.php?id=<?php echo $num; ?>'">취소</button>
+        <button type="button" onclick="location.href='board_view.php?id=<?php echo $id; ?>'">취소</button>
     </form>
 </body>
 </html>

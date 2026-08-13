@@ -15,16 +15,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $sql_accept = "UPDATE friendships SET status = 'accepted', responded_at = NOW() WHERE id = '$friendship_id'";
         mysqli_query($connect, $sql_accept);
         echo "<script>alert('친구 요청을 수락했습니다.'); location.href='friends.php';</script>";
-
-
-        $sql_f = "SELECT username FROM users WHERE id = '$friendship_id'";
-        $result_friend = mysqli_query($connect, $sql_friend);
-        $friend = mysqli_fetch_assoc($result_friend);
-        $chat_name = $username . '님과 ' . $friend['username'] . '님의 채팅';
-        $chat_name = mysqli_real_escape_string($connect, $chat_name);
-        $sql_chat = "INSERT INTO chat (name) VALUES ('$chat_name')";
-        mysqli_query($connect, $sql_chat);
-        $chat_id = mysqli_insert_id($connect);
     } else if ($action === 'reject') {
         $sql_reject = "DELETE FROM friendships WHERE id = '$friendship_id'";
         mysqli_query($connect, $sql_reject);
@@ -91,7 +81,7 @@ $result_requests = mysqli_query($connect, $sql_requests);
                         </td>
                         <td>
                             <form action="chat.php" method="post">
-                                <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
+                                <input type="hidden" name="user_id" value="<?php echo $friend['id']; ?>">
                                 <button type="submit">채팅</button>
                             </form>                        
                         </td>

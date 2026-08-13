@@ -58,10 +58,10 @@ if (!$chat) {
     $chat_id = $chat['id'];
 }
 
-$sql_messages = "SELECT * FROM chat_message
-                 JOIN users ON chat_message.sender_id = users.id
+$sql_messages = "SELECT chat_message.sender_id, chat_message.content, chat_message.created_at AS message_created_at, users.username
+                 FROM chat_message JOIN users ON chat_message.sender_id = users.id
                  WHERE chat_message.chat_id = '$chat_id'
-                 ORDER BY chat_message.created_at ASC";
+                 ORDER BY chat_message.created_at, chat_message.id ASC";
 
 $result_messages = mysqli_query($connect, $sql_messages);
 
@@ -93,5 +93,16 @@ $result_messages = mysqli_query($connect, $sql_messages);
             <?php endwhile; ?>
         <?php endif; ?>
     </div>
+    
+    <form id="message-form">
+        <input type="text" id="message-input" maxlength="2000" required>
+        <button type="submit">전송</button>
+    </form>
+
+    <script>
+        const chatId = <?php echo $chat_id; ?>;
+        const userId = <?php echo (int) $id; ?>;
+    </script>
+    <script src="js/chat.js"></script>
 </body>
 </html>
