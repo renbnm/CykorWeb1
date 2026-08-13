@@ -96,6 +96,26 @@ function addMessage(data) {
     messageBox.appendChild(createdAt);
     messageBox.appendChild(content);
 
+    if (data.attachment_id != 0) {
+        if (data.attachment_type == 'image') {
+            const image = document.createElement('img');
+
+            image.src = `download.php?id=${data.attachment_id}`;
+            image.alt = data.original_name;
+            image.style.maxWidth = '200px';
+            image.style.maxHeight = '200px';
+
+            messageBox.appendChild(image);
+        } else {
+            const fileLink = document.createElement('a');
+
+            fileLink.href = `download.php?id=${data.attachment_id}`;
+            fileLink.textContent = `${data.original_name} 다운로드`;
+
+            messageBox.appendChild(fileLink);
+        }
+    }
+
     messageList.appendChild(messageBox);
     messageList.appendChild(line);
     messageList.scrollTop = messageList.scrollHeight;
