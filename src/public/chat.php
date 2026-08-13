@@ -91,16 +91,33 @@ $result_messages = mysqli_query($connect, $sql_messages);
         <?php if (mysqli_num_rows($result_messages) === 0): ?>
             <p>아직 대화 내역이 없습니다.</p>
         <?php else: ?>
-            <?php while ($message = mysqli_fetch_assoc($result_messages)): ?>
-                <div>
-                    <strong>
-                        <?php echo htmlspecialchars($message['username']); ?>
-                    </strong>
-                    <span><?php echo htmlspecialchars($message['message_created_at']); ?></span>
-                    <p><?php echo nl2br(htmlspecialchars($message['content'])); ?></p>
-                </div>
-                <hr>
-            <?php endwhile; ?>
+                <?php while ($message = mysqli_fetch_assoc($result_messages)): ?>
+                    <div>
+                        <strong>
+                            <?php echo htmlspecialchars($message['username']); ?>
+                        </strong>
+                        <span><?php echo htmlspecialchars($message['message_created_at']); ?></span>
+                        <p><?php echo nl2br(htmlspecialchars($message['content'])); ?></p>
+                        <?php if ($message['attachment_id']): ?>
+                        <?php if ($message['attachment_type'] == 'image'): ?>
+                            <p>
+                                <img
+                                    src="download.php?id=<?php echo $message['attachment_id']; ?>"
+                                    alt="<?php echo htmlspecialchars($message['original_name']); ?>"
+                                    style="max-width: 200px; max-height: 200px;">
+                            </p>
+                        <?php else: ?>
+                            <p>
+                                <a href="download.php?id=<?php echo $message['attachment_id']; ?>">
+                                    <?php echo htmlspecialchars($message['original_name']); ?>
+                                    다운로드
+                                </a>
+                            </p>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    </div>
+                    <hr>
+                <?php endwhile; ?>
         <?php endif; ?>
     </div>
     
