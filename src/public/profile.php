@@ -123,11 +123,12 @@ $result_post = mysqli_query($connect, $sql_post);
         <input type="hidden" name="action" value="friend_request">
         <input type="hidden" name="receiver_id" value="<?php echo $user_id; ?>">
         <button type="submit">친구 요청 보내기</button>
-        <form action="chat.php" method="post">
-            <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
-            <button type="submit">채팅</button>
-        </form>                        
     </form>
+    <form action="chat.php" method="post">
+        <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
+        <button type="submit">채팅</button>
+    </form>                        
+
 <?php endif; ?>
 
 <h2>게시글</h2>
