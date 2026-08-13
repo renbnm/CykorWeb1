@@ -8,12 +8,12 @@ if (!isset($_SESSION['id'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $num = $_POST['id'];
+    $id = $_POST['id'];
 } else {
-    $num = $_GET['id'];
+    $id = $_GET['id'];
 }
 
-$sql = "SELECT * FROM posts WHERE id = '$num'";
+$sql = "SELECT * FROM posts WHERE id = '$id'";
 $result = mysqli_query($connect, $sql);
 $post = mysqli_fetch_assoc($result);
 
