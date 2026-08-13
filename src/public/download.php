@@ -19,6 +19,8 @@ if (!$attachment) {
     exit;
 }
 
+$chat_id = $attachment['chat_id'];
+
 $sql = "SELECT * FROM chat_members
         WHERE chat_id = '$chat_id' AND user_id = '$user_id'";
 $result = mysqli_query($connect, $sql);
@@ -28,8 +30,6 @@ if (!$member) {
     echo '파일을 볼 권한이 없습니다.';
     exit;
 }
-
-$chat_id = $attachment['chat_id'];
 
 $file_name = basename($attachment['stored_name']);
 $file_path = __DIR__ . '/../storage/uploads/' . $file_name;
