@@ -15,6 +15,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $sql_accept = "UPDATE friendships SET status = 'accepted', responded_at = NOW() WHERE id = '$friendship_id'";
         mysqli_query($connect, $sql_accept);
         echo "<script>alert('친구 요청을 수락했습니다.'); location.href='friends.php';</script>";
+
+
+        $sql_f = "SELECT username FROM users WHERE id = '$friendship_id'";
+        $result_friend = mysqli_query($connect, $sql_friend);
+        $friend = mysqli_fetch_assoc($result_friend);
+        $chat_name = $username . '님과 ' . $friend['username'] . '님의 채팅';
+        $chat_name = mysqli_real_escape_string($connect, $chat_name);
+        $sql_chat = "INSERT INTO chat (name) VALUES ('$chat_name')";
+        mysqli_query($connect, $sql_chat);
+        $chat_id = mysqli_insert_id($connect);
     } else if ($action === 'reject') {
         $sql_reject = "DELETE FROM friendships WHERE id = '$friendship_id'";
         mysqli_query($connect, $sql_reject);
@@ -66,6 +76,7 @@ $result_requests = mysqli_query($connect, $sql_requests);
             <thead>
                 <tr>
                     <th>사용자 이름</th>
+                    <th>채팅</th>
                     <th>친구가 된 시각</th>
                     <th></th>
                 </tr>
@@ -77,6 +88,12 @@ $result_requests = mysqli_query($connect, $sql_requests);
                             <a href="profile.php?id=<?php echo htmlspecialchars($friend['id']); ?>">
                                 <?php echo htmlspecialchars($friend['username']); ?>
                             </a>
+                        </td>
+                        <td>
+                            <form action="chat.php" method="post">
+                                <input type="hidden" name="user_id" value="<?php echo $user_id; ?>">
+                                <button type="submit">채팅</button>
+                            </form>                        
                         </td>
                         <td><?php echo htmlspecialchars($friend['responded_at']); ?></td>
                         <td>
