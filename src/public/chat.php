@@ -95,7 +95,8 @@ $result_messages = mysqli_query($connect, $sql_messages);
     </div>
     
     <form id="message-form">
-        <input type="text" id="message-input" maxlength="2000" required>
+        <input type="text" id="message-input" maxlength="2000">
+        <input type="file" id="attachment-input">
         <button type="submit">전송</button>
     </form>
 

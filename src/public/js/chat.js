@@ -1,6 +1,7 @@
 const messageList = document.getElementById('message-list');
 const messageForm = document.getElementById('message-form');
 const messageInput = document.getElementById('message-input');
+const attachmentInput = document.getElementById('attachment-input');
 const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
 const socket = new WebSocket(`${wsProtocol}://${location.hostname}:8282`);
 
@@ -26,12 +27,13 @@ socket.addEventListener('close', function () {
     console.log('채팅 서버와 연결이 끊겼습니다.');
 });
 
-messageForm.addEventListener('submit', function (event) {
+messageForm.addEventListener('submit', async function (event) {
     event.preventDefault();
 
     const content = messageInput.value.trim();
+    const attachment = attachmentInput.files[0];
 
-    if (content == '') {
+    if (content == '' && !attachment) {
         return;
     }
 
@@ -40,12 +42,37 @@ messageForm.addEventListener('submit', function (event) {
         return;
     }
 
+    let attachmentId = null;
+
+    if (attachment) {
+        const formData = new FormData();
+
+        formData.append('chat_id', chatId);
+        formData.append('attachment', attachment);
+
+        const response = await fetch('upload.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success == false) {
+            alert(result.message);
+            return;
+        }
+
+        attachmentId = result.attachment_id;
+    }
+
     socket.send(JSON.stringify({
         type: 'send',
-        content: content
+        content: content,
+        attachment_id: attachmentId
     }));
 
     messageInput.value = '';
+    attachmentInput.value = '';
 });
 
 function addMessage(data) {
