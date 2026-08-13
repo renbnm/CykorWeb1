@@ -58,8 +58,9 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
         }
 
         $content = isset($data['content']) ? trim($data['content']) : '';
+        $attachment_id = isset($data['attachment_id']) ? (int) $data['attachment_id'] : 0;
 
-        if ($content == '' || strlen($content) > 2000) {
+        if (($content == '' && $attachment_id == 0) || strlen($content) > 2000) {
             $error = ['type' => 'error', 'message' => '메시지는 1자 이상 2000자 이하로 입력하세요.'];
             $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
             return;
@@ -74,6 +75,27 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
             $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
             return;
         }
+        
+        $attachment = null;
+
+        if ($attachment_id != 0) {
+            $sql = "SELECT * FROM chat_attachment
+                    WHERE id = '$attachment_id'
+                    AND chat_id = '$chat_id'
+                    AND uploader_id = '$user_id'
+                    AND message_id IS NULL";
+            $result = mysqli_query($connect, $sql);
+            $attachment = mysqli_fetch_assoc($result);
+
+            if (!$attachment) {
+                $error = [
+                    'type' => 'error',
+                    'message' => '첨부파일 정보를 찾을 수 없습니다.'
+                ];
+                $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
+                return;
+            }
+        }
 
         $content_sql = mysqli_real_escape_string($connect, $content);
         $sql = "INSERT INTO chat_message (chat_id, sender_id, content) VALUES ('$chat_id', '$user_id', '$content_sql')";
@@ -84,6 +106,24 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
             $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
             return;
         }
+
+        $message_id = mysqli_insert_id($connect);
+        if ($attachment_id != 0) {
+            $sql = "UPDATE chat_attachment
+                    SET message_id = '$message_id'
+                    WHERE id = '$attachment_id'";
+            $result = mysqli_query($connect, $sql);
+
+            if (!$result) {
+                $error = [
+                    'type' => 'error',
+                    'message' => '첨부파일 연결에 실패했습니다.'
+                ];
+                $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
+                return;
+            }
+        }
+
 
         $sql = "UPDATE chat SET updated_at = NOW() WHERE id = '$chat_id'";
         mysqli_query($connect, $sql);
@@ -98,7 +138,10 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
             'sender_id' => $user_id,
             'username' => $user['username'],
             'content' => $content,
-            'created_at' => date('Y-m-d H:i:s')
+            'created_at' => date('Y-m-d H:i:s'),
+            'attachment_id' => $attachment_id,
+            'attachment_type' => $attachment ? $attachment['type'] : '',
+            'original_name' => $attachment ? $attachment['original_name'] : '',
         ];
         $message = json_encode($message, JSON_UNESCAPED_UNICODE);
 
