@@ -58,11 +58,21 @@ if (!$chat) {
     $chat_id = $chat['id'];
 }
 
-$sql_messages = "SELECT chat_message.sender_id, chat_message.content, chat_message.created_at AS message_created_at, users.username
-                 FROM chat_message JOIN users ON chat_message.sender_id = users.id
+$sql_messages = "SELECT
+                    chat_message.id AS message_id,
+                    chat_message.sender_id,
+                    chat_message.content,
+                    chat_message.created_at AS message_created_at,
+                    users.username,
+                    chat_attachment.id AS attachment_id,
+                    chat_attachment.type AS attachment_type,
+                    chat_attachment.original_name
+                 FROM chat_message
+                 JOIN users ON chat_message.sender_id = users.id
+                 LEFT JOIN chat_attachment
+                    ON chat_message.id = chat_attachment.message_id
                  WHERE chat_message.chat_id = '$chat_id'
-                 ORDER BY chat_message.created_at, chat_message.id ASC";
-
+                 ORDER BY chat_message.created_at ASC, chat_message.id ASC";
 $result_messages = mysqli_query($connect, $sql_messages);
 
 ?>
