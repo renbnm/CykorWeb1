@@ -42,7 +42,6 @@ curl_setopt($curl, CURLOPT_TIMEOUT, 5);
 
 $html = curl_exec($curl);
 $status_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-$content_type = curl_getinfo($curl, CURLINFO_CONTENT_TYPE);
 
 curl_close($curl);
 

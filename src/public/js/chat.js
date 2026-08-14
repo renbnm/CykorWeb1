@@ -33,7 +33,6 @@ messageForm.addEventListener('submit', async function (event) {
     const content = messageInput.value.trim();
     const attachment = attachmentInput.files[0];
     const urlMatch = content.match(/https?:\/\/[^\s]+/);
-
     if (content == '' && !attachment) {
         return;
     }
@@ -90,7 +89,8 @@ messageForm.addEventListener('submit', async function (event) {
     socket.send(JSON.stringify({
         type: 'send',
         content: content,
-        attachment_id: attachmentId
+        attachment_id: attachmentId,
+        url_id: urlId
     }));
 
     messageInput.value = '';
@@ -136,6 +136,19 @@ function addMessage(data) {
 
             messageBox.appendChild(fileLink);
         }
+    }
+
+    if (data.url_id != 0) {
+        const urlBox = document.createElement('p');
+        const urlLink = document.createElement('a');
+
+        urlLink.href = data.url;
+        urlLink.target = '_blank';
+        urlLink.rel = 'noopener';
+        urlLink.textContent = data.url_title || data.url;
+
+        urlBox.appendChild(urlLink);
+        messageBox.appendChild(urlBox);
     }
 
     messageList.appendChild(messageBox);
