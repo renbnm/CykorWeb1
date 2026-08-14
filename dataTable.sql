@@ -75,3 +75,18 @@ CREATE TABLE chat_attachment (
     FOREIGN KEY (chat_id) REFERENCES chat(id) ON DELETE CASCADE,
     FOREIGN KEY (uploader_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE chat_url_preview (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    message_id INT NULL UNIQUE,
+    chat_id INT NOT NULL,
+    uploader_id INT NOT NULL,
+    url VARCHAR(2048) NOT NULL,
+    title VARCHAR(255) DEFAULT NULL,
+    description VARCHAR(1000) DEFAULT NULL,
+    image_url VARCHAR(2048) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (message_id) REFERENCES chat_message(id) ON DELETE CASCADE,
+    FOREIGN KEY (chat_id) REFERENCES chat(id) ON DELETE CASCADE,
+    FOREIGN KEY (uploader_id) REFERENCES users(id) ON DELETE CASCADE
+);
