@@ -66,11 +66,16 @@ $sql_messages = "SELECT
                     users.username,
                     chat_attachment.id AS attachment_id,
                     chat_attachment.type AS attachment_type,
-                    chat_attachment.original_name
+                    chat_attachment.original_name,
+                    chat_url_preview.id AS url_id,
+                    chat_url_preview.url,
+                    chat_url_preview.title AS url_title
                  FROM chat_message
                  JOIN users ON chat_message.sender_id = users.id
                  LEFT JOIN chat_attachment
                     ON chat_message.id = chat_attachment.message_id
+                LEFT JOIN chat_url_preview
+                    ON chat_message.id = chat_url_preview.message_id
                  WHERE chat_message.chat_id = '$chat_id'
                  ORDER BY chat_message.created_at ASC, chat_message.id ASC";
 $result_messages = mysqli_query($connect, $sql_messages);
@@ -114,6 +119,13 @@ $result_messages = mysqli_query($connect, $sql_messages);
                                 </a>
                             </p>
                         <?php endif; ?>
+                    <?php endif; ?>
+                    <?php if ($message['url_id']): ?>
+                        <p>
+                            <a href="<?php echo htmlspecialchars($message['url']); ?>"
+                            target="_blank" rel="noopener"> <?php echo htmlspecialchars($message['url_title']); ?>
+                            </a>
+                        </p>
                     <?php endif; ?>
                     </div>
                     <hr>
