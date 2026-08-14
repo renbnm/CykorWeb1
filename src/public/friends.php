@@ -1,5 +1,6 @@
 <?php
-session_start();
+include __DIR__ . '/../app/security.php';
+start_secure_session();
 include __DIR__ . '/../app/db_connect.php';
 
 if (!isset($_SESSION['id'])) {
@@ -7,46 +8,79 @@ if (!isset($_SESSION['id'])) {
     exit;
 }
 
+$user_id = (int) $_SESSION['id'];
+$username = $_SESSION['username'];
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $friendship_id = $_POST['friendship_id'];
-    $action = $_POST['action'];
+    if (!csrf_is_valid()) {
+        echo "<script>alert('잘못된 요청입니다.'); location.href='friends.php';</script>";
+        exit;
+    }
+
+    $friendship_id = isset($_POST['friendship_id']) ? (int) $_POST['friendship_id'] : 0;
+    $action = isset($_POST['action']) && is_string($_POST['action']) ? $_POST['action'] : '';
 
     if ($action === 'accept') {
-        $sql_accept = "UPDATE friendships SET status = 'accepted', responded_at = NOW() WHERE id = '$friendship_id'";
-        mysqli_query($connect, $sql_accept);
+        $sql_accept = "UPDATE friendships SET status = 'accepted', responded_at = NOW()
+                       WHERE id = ? AND receiver_id = ? AND status = 'pending'";
+        $stmt = mysqli_prepare($connect, $sql_accept);
+        mysqli_stmt_bind_param($stmt, 'ii', $friendship_id, $user_id);
+        mysqli_stmt_execute($stmt);
+        if (mysqli_stmt_affected_rows($stmt) != 1) {
+            echo "<script>alert('처리할 수 없는 친구 요청입니다.'); location.href='friends.php';</script>";
+            exit;
+        }
         echo "<script>alert('친구 요청을 수락했습니다.'); location.href='friends.php';</script>";
     } else if ($action === 'reject') {
-        $sql_reject = "DELETE FROM friendships WHERE id = '$friendship_id'";
-        mysqli_query($connect, $sql_reject);
+        $sql_reject = "DELETE FROM friendships
+                       WHERE id = ? AND receiver_id = ? AND status = 'pending'";
+        $stmt = mysqli_prepare($connect, $sql_reject);
+        mysqli_stmt_bind_param($stmt, 'ii', $friendship_id, $user_id);
+        mysqli_stmt_execute($stmt);
+        if (mysqli_stmt_affected_rows($stmt) != 1) {
+            echo "<script>alert('처리할 수 없는 친구 요청입니다.'); location.href='friends.php';</script>";
+            exit;
+        }
         echo "<script>alert('친구 요청을 거절했습니다.'); location.href='friends.php';</script>";
     }else if ($action === 'delete') {
-        $sql_unfriend = "DELETE FROM friendships WHERE id = '$friendship_id'";
-        mysqli_query($connect, $sql_unfriend);
+        $sql_unfriend = "DELETE FROM friendships
+                         WHERE id = ? AND status = 'accepted'
+                         AND (sender_id = ? OR receiver_id = ?)";
+        $stmt = mysqli_prepare($connect, $sql_unfriend);
+        mysqli_stmt_bind_param($stmt, 'iii', $friendship_id, $user_id, $user_id);
+        mysqli_stmt_execute($stmt);
+        if (mysqli_stmt_affected_rows($stmt) != 1) {
+            echo "<script>alert('삭제할 수 없는 친구 관계입니다.'); location.href='friends.php';</script>";
+            exit;
+        }
         echo "<script>alert('친구를 삭제했습니다.'); location.href='friends.php';</script>";
     }
     exit;
 }
 
-$user_id = (int) $_SESSION['id'];
-$username = $_SESSION['username'];
-
 $sql_friends = "SELECT friendships.id AS f_id, users.id, users.username, friendships.responded_at FROM friendships 
-                JOIN users ON friendships.receiver_id = users.id WHERE friendships.sender_id = '$user_id' 
+                JOIN users ON friendships.receiver_id = users.id WHERE friendships.sender_id = ?
                 AND friendships.status = 'accepted'
                 UNION ALL
                 SELECT friendships.id AS f_id, users.id, users.username, friendships.responded_at FROM friendships
-                JOIN users ON friendships.sender_id = users.id WHERE friendships.receiver_id = '$user_id'
+                JOIN users ON friendships.sender_id = users.id WHERE friendships.receiver_id = ?
                 AND friendships.status = 'accepted'
                 ORDER BY username ASC";
         
-$result_friends = mysqli_query($connect, $sql_friends);
+$stmt = mysqli_prepare($connect, $sql_friends);
+mysqli_stmt_bind_param($stmt, 'ii', $user_id, $user_id);
+mysqli_stmt_execute($stmt);
+$result_friends = mysqli_stmt_get_result($stmt);
 
 $sql_requests = "SELECT friendships.id, users.id AS sender_id, users.username, friendships.created_at FROM friendships
-                 JOIN users ON friendships.sender_id = users.id WHERE friendships.receiver_id = '$user_id' 
+                 JOIN users ON friendships.sender_id = users.id WHERE friendships.receiver_id = ?
                  AND friendships.status = 'pending'
                  ORDER BY friendships.created_at DESC";
 
-$result_requests = mysqli_query($connect, $sql_requests);
+$stmt = mysqli_prepare($connect, $sql_requests);
+mysqli_stmt_bind_param($stmt, 'i', $user_id);
+mysqli_stmt_execute($stmt);
+$result_requests = mysqli_stmt_get_result($stmt);
 ?>
 <!DOCTYPE html>
 <html lang="ko">
@@ -81,6 +115,7 @@ $result_requests = mysqli_query($connect, $sql_requests);
                         </td>
                         <td>
                             <form action="chat.php" method="post">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="user_id" value="<?php echo $friend['id']; ?>">
                                 <button type="submit">채팅</button>
                             </form>                        
@@ -88,6 +123,7 @@ $result_requests = mysqli_query($connect, $sql_requests);
                         <td><?php echo htmlspecialchars($friend['responded_at']); ?></td>
                         <td>
                             <form action="friends.php" method="post" style="display: inline;">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="friendship_id" value="<?php echo htmlspecialchars($friend['f_id']); ?>">
                                 <button type="submit" name="action" value="delete">친구 삭제</button>
                             </form>
@@ -121,10 +157,12 @@ $result_requests = mysqli_query($connect, $sql_requests);
                         <td><?php echo htmlspecialchars($request['created_at']); ?></td>
                         <td>
                             <form action="friends.php" method="post" style="display: inline;">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="friendship_id" value="<?php echo htmlspecialchars($request['id']); ?>">
                                 <button type="submit" name="action" value="accept">수락</button>
                             </form>
                             <form action="friends.php" method="post" style="display: inline;">
+                                <?php echo csrf_field(); ?>
                                 <input type="hidden" name="friendship_id" value="<?php echo htmlspecialchars($request['id']); ?>">
                                 <button type="submit" name="action" value="reject">거절</button>
                             </form>

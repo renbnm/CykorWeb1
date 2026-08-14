@@ -8,8 +8,7 @@ const socket = new WebSocket(`${wsProtocol}://${location.hostname}:8282`);
 socket.addEventListener('open', function () {
     socket.send(JSON.stringify({
         type: 'join',
-        chat_id: chatId,
-        user_id: userId
+        token: chatToken
     }));
 });
 
@@ -50,6 +49,7 @@ messageForm.addEventListener('submit', async function (event) {
 
         formData.append('chat_id', chatId);
         formData.append('attachment', attachment);
+        formData.append('csrf_token', csrfToken);
 
         const response = await fetch('upload.php', {
             method: 'POST',
@@ -71,6 +71,7 @@ messageForm.addEventListener('submit', async function (event) {
 
         formData.append('chat_id', chatId);
         formData.append('url', urlMatch[0]);
+        formData.append('csrf_token', csrfToken);
 
         const response = await fetch('url_preview.php', {
             method: 'POST',
@@ -141,14 +142,23 @@ function addMessage(data) {
     if (data.url_id != 0) {
         const urlBox = document.createElement('p');
         const urlLink = document.createElement('a');
+        let parsedUrl = null;
 
-        urlLink.href = data.url;
-        urlLink.target = '_blank';
-        urlLink.rel = 'noopener';
-        urlLink.textContent = data.url_title || data.url;
+        try {
+            parsedUrl = new URL(data.url);
+        } catch (error) {
+            parsedUrl = null;
+        }
 
-        urlBox.appendChild(urlLink);
-        messageBox.appendChild(urlBox);
+        if (parsedUrl && (parsedUrl.protocol == 'http:' || parsedUrl.protocol == 'https:')) {
+            urlLink.href = parsedUrl.href;
+            urlLink.target = '_blank';
+            urlLink.rel = 'noopener noreferrer';
+            urlLink.textContent = data.url_title || data.url;
+
+            urlBox.appendChild(urlLink);
+            messageBox.appendChild(urlBox);
+        }
     }
 
     messageList.appendChild(messageBox);

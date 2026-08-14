@@ -1,5 +1,6 @@
 <?php
-session_start();
+include __DIR__ . '/../app/security.php';
+start_secure_session();
 include __DIR__ . '/../app/db_connect.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -14,22 +15,40 @@ if ($_SERVER['REQUEST_METHOD'] != 'POST') {
     exit;
 }
 
+if (!csrf_is_valid()) {
+    echo json_encode(['success' => false, 'message' => '잘못된 요청입니다.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if (!isset($_POST['chat_id']) || !isset($_FILES['attachment'])) {
     echo json_encode(['success' => false, 'message' => '채팅방 또는 파일 정보가 없습니다.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$user_id = $_SESSION['id'];
-$chat_id = $_POST['chat_id'];
+$user_id = (int) $_SESSION['id'];
+$chat_id = (int) $_POST['chat_id'];
 $file = $_FILES['attachment'];
+
+if (!is_array($file)
+    || !isset($file['error'], $file['tmp_name'], $file['size'], $file['name'])
+    || !is_int($file['error'])
+    || !is_string($file['tmp_name'])
+    || !is_int($file['size'])
+    || !is_string($file['name'])) {
+    echo json_encode(['success' => false, 'message' => '첨부파일 형식이 올바르지 않습니다.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 if ($chat_id <= 0) {
     echo json_encode(['success' => false, 'message' => '잘못된 채팅방입니다.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-$sql = "SELECT * FROM chat_members WHERE chat_id = '$chat_id' AND user_id = '$user_id'";
-$result = mysqli_query($connect, $sql);
+$sql = "SELECT id FROM chat_members WHERE chat_id = ? AND user_id = ?";
+$stmt = mysqli_prepare($connect, $sql);
+mysqli_stmt_bind_param($stmt, 'ii', $chat_id, $user_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 $member = mysqli_fetch_assoc($result);
 
 if (!$member) {
@@ -39,6 +58,11 @@ if (!$member) {
 
 if ($file['error'] != UPLOAD_ERR_OK) {
     echo json_encode(['success' => false, 'message' => '파일 업로드에 실패했습니다.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (!is_uploaded_file($file['tmp_name'])) {
+    echo json_encode(['success' => false, 'message' => '올바른 업로드 파일이 아닙니다.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -77,9 +101,20 @@ if ($mime_type == 'image/jpeg') {
     exit;
 }
 
-if ($type == 'image' && !getimagesize($file['tmp_name'])) {
-    echo json_encode(['success' => false, 'message' => '올바른 이미지 파일이 아닙니다.'], JSON_UNESCAPED_UNICODE);
-    exit;
+if ($type == 'image') {
+    $image_info = getimagesize($file['tmp_name']);
+
+    if (!$image_info) {
+        echo json_encode(['success' => false, 'message' => '올바른 이미지 파일이 아닙니다.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if ($image_info[0] > 10000
+        || $image_info[1] > 10000
+        || $image_info[0] * $image_info[1] > 40000000) {
+        echo json_encode(['success' => false, 'message' => '이미지 해상도가 너무 큽니다.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
 
 $original_name = basename($file['name']);
@@ -103,15 +138,23 @@ if (!move_uploaded_file($file['tmp_name'], $upload_path)) {
     exit;
 }
 
-$stored_name_sql = mysqli_real_escape_string($connect, $stored_name);
-$original_name_sql = mysqli_real_escape_string($connect, $original_name);
-$mime_type_sql = mysqli_real_escape_string($connect, $mime_type);
-
 $sql = "INSERT INTO chat_attachment
         (message_id, chat_id, uploader_id, stored_name, original_name, mime_type, file_size, type)
-        VALUES (NULL, '$chat_id', '$user_id', '$stored_name_sql', '$original_name_sql',
-                '$mime_type_sql', '{$file['size']}', '$type')";
-$result = mysqli_query($connect, $sql);
+        VALUES (NULL, ?, ?, ?, ?, ?, ?, ?)";
+$file_size = (int) $file['size'];
+$stmt = mysqli_prepare($connect, $sql);
+mysqli_stmt_bind_param(
+    $stmt,
+    'iisssis',
+    $chat_id,
+    $user_id,
+    $stored_name,
+    $original_name,
+    $mime_type,
+    $file_size,
+    $type
+);
+$result = mysqli_stmt_execute($stmt);
 
 if (!$result) {
     unlink($upload_path);

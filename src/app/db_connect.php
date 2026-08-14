@@ -4,9 +4,15 @@ $user = 'root';
 $pass = 'root';
 $db = 'user_info';
 
-$connect = mysqli_connect($host, $user, $pass, $db);
+$connect = null;
 
-if (!$connect) {
-    echo 'Connection failed!';
+try {
+    $connect = mysqli_connect($host, $user, $pass, $db);
+    mysqli_set_charset($connect, 'utf8mb4');
+} catch (mysqli_sql_exception $error) {
+    error_log($error->getMessage());
+    http_response_code(500);
+    echo 'Database connection failed.';
+    exit;
 }
 ?>

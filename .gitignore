@@ -1,0 +1,6 @@
+.env
+src/storage/uploads/*
+!src/storage/uploads/.gitkeep
+src/chat/*.log
+src/chat/*.pid
+

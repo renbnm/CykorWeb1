@@ -1,5 +1,6 @@
 <?php
-session_start();
+include __DIR__ . '/../app/security.php';
+start_secure_session();
 include __DIR__ . '/../app/db_connect.php';
 
 if (!isset($_SESSION['id'])) {
@@ -20,10 +21,13 @@ $result = mysqli_query($connect, $sql);
 </head>
 <body>
     <header>
-        <button type="button" onclick="location.href='logout.php'">로그아웃</button>
+        <form action="logout.php" method="post" style="display:inline;">
+            <?php echo csrf_field(); ?>
+            <button type="submit">로그아웃</button>
+        </form>
         <button type="button" onclick="location.href='profile.php?id=<?php echo $_SESSION['id']; ?>'">프로필</button>
         <button type="button" onclick="location.href='friends.php'">친구 목록</button>
-        <h2><?php echo "반갑습니다. $username 님" ?></h2>
+        <h2>반갑습니다. <?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?> 님</h2>
     </header>
 
     </header>
@@ -42,10 +46,10 @@ $result = mysqli_query($connect, $sql);
         <tbody>
             <?php
             while ($posts = mysqli_fetch_assoc($result)) {
-                $num = $posts['id'];
-                $title = $posts['title'];
-                $author = $posts['author_name'];
-                $date = $posts['created_at'];
+                $num = (int) $posts['id'];
+                $title = htmlspecialchars($posts['title'], ENT_QUOTES, 'UTF-8');
+                $author = htmlspecialchars($posts['author_name'], ENT_QUOTES, 'UTF-8');
+                $date = htmlspecialchars($posts['created_at'], ENT_QUOTES, 'UTF-8');
                 echo "<tr><td>{$num}</td><td><a href='board_view.php?id={$num}'>{$title}</a></td><td>{$author}</td><td>{$date}</td></tr>";
             }
             ?>

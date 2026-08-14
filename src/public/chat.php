@@ -1,5 +1,6 @@
 <?php
-session_start();
+include __DIR__ . '/../app/security.php';
+start_secure_session();
 include __DIR__ . '/../app/db_connect.php';
 
 if (!isset($_SESSION['id'])) {
@@ -12,7 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] != 'POST') {
     exit;
 }
 
-$id = $_SESSION['id'];
+if (!csrf_is_valid()) {
+    echo "<script>alert('잘못된 요청입니다.'); location.href='index.php';</script>";
+    exit;
+}
+
+$id = (int) $_SESSION['id'];
 $user_id = (int) $_POST['user_id'];
 
 if ($id == $user_id) {
@@ -20,8 +26,11 @@ if ($id == $user_id) {
     exit;
 }
 
-$sql_user = "SELECT id, username FROM users WHERE id = '$user_id'";
-$result_user = mysqli_query($connect, $sql_user);
+$sql_user = "SELECT id, username FROM users WHERE id = ?";
+$stmt = mysqli_prepare($connect, $sql_user);
+mysqli_stmt_bind_param($stmt, 'i', $user_id);
+mysqli_stmt_execute($stmt);
+$result_user = mysqli_stmt_get_result($stmt);
 $user = mysqli_fetch_assoc($result_user);
 
 if (!$user) {
@@ -32,8 +41,11 @@ if (!$user) {
 $sql = "SELECT chat.id FROM chat 
         JOIN chat_members cm1 ON chat.id = cm1.chat_id
         JOIN chat_members cm2 ON chat.id = cm2.chat_id
-        WHERE cm1.user_id = '$id' AND cm2.user_id = '$user_id'";
-$result_chat = mysqli_query($connect, $sql);
+        WHERE cm1.user_id = ? AND cm2.user_id = ?";
+$stmt = mysqli_prepare($connect, $sql);
+mysqli_stmt_bind_param($stmt, 'ii', $id, $user_id);
+mysqli_stmt_execute($stmt);
+$result_chat = mysqli_stmt_get_result($stmt);
 $chat = mysqli_fetch_assoc($result_chat);
 
 if (!$chat) {
@@ -43,9 +55,10 @@ if (!$chat) {
     $chat_id = mysqli_insert_id($connect);
 
     $sql_add_members = "INSERT INTO chat_members (chat_id, user_id)
-                        VALUES ('$chat_id', '$id'),
-                               ('$chat_id', '$user_id')";
-    $result_add_members = mysqli_query($connect, $sql_add_members);
+                        VALUES (?, ?), (?, ?)";
+    $stmt = mysqli_prepare($connect, $sql_add_members);
+    mysqli_stmt_bind_param($stmt, 'iiii', $chat_id, $id, $chat_id, $user_id);
+    $result_add_members = mysqli_stmt_execute($stmt);
 
     if ($result_create && $result_add_members) {
         mysqli_commit($connect);
@@ -76,9 +89,14 @@ $sql_messages = "SELECT
                     ON chat_message.id = chat_attachment.message_id
                 LEFT JOIN chat_url_preview
                     ON chat_message.id = chat_url_preview.message_id
-                 WHERE chat_message.chat_id = '$chat_id'
+                 WHERE chat_message.chat_id = ?
                  ORDER BY chat_message.created_at ASC, chat_message.id ASC";
-$result_messages = mysqli_query($connect, $sql_messages);
+$stmt = mysqli_prepare($connect, $sql_messages);
+mysqli_stmt_bind_param($stmt, 'i', $chat_id);
+mysqli_stmt_execute($stmt);
+$result_messages = mysqli_stmt_get_result($stmt);
+
+$chat_token = create_chat_token($id, $chat_id);
 
 ?>
 <!DOCTYPE html>
@@ -121,11 +139,14 @@ $result_messages = mysqli_query($connect, $sql_messages);
                         <?php endif; ?>
                     <?php endif; ?>
                     <?php if ($message['url_id']): ?>
-                        <p>
-                            <a href="<?php echo htmlspecialchars($message['url']); ?>"
-                            target="_blank" rel="noopener"> <?php echo htmlspecialchars($message['url_title']); ?>
-                            </a>
-                        </p>
+                        <?php if (is_http_url($message['url'])): ?>
+                            <p>
+                                <a href="<?php echo htmlspecialchars($message['url'], ENT_QUOTES, 'UTF-8'); ?>"
+                                target="_blank" rel="noopener noreferrer">
+                                    <?php echo htmlspecialchars($message['url_title'], ENT_QUOTES, 'UTF-8'); ?>
+                                </a>
+                            </p>
+                        <?php endif; ?>
                     <?php endif; ?>
                     </div>
                     <hr>
@@ -141,7 +162,8 @@ $result_messages = mysqli_query($connect, $sql_messages);
 
     <script>
         const chatId = <?php echo $chat_id; ?>;
-        const userId = <?php echo (int) $id; ?>;
+        const chatToken = <?php echo json_encode($chat_token); ?>;
+        const csrfToken = <?php echo json_encode(csrf_token()); ?>;
     </script>
     <script src="js/chat.js"></script>
 </body>

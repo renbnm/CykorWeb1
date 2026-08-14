@@ -1,5 +1,6 @@
 <?php
-session_start();
+include __DIR__ . '/../app/security.php';
+start_secure_session();
 include __DIR__ . '/../app/db_connect.php';
 
 if (!isset($_SESSION['id'])) {
@@ -8,8 +9,14 @@ if (!isset($_SESSION['id'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $title = trim($_POST['title']);
-    $content = trim($_POST['content']);
+    if (!csrf_is_valid()) {
+        echo "<script>alert('잘못된 요청입니다.'); history.back();</script>";
+        exit;
+    }
+
+    $title = isset($_POST['title']) && is_string($_POST['title']) ? trim($_POST['title']) : '';
+    $content = isset($_POST['content']) && is_string($_POST['content'])
+        ? trim($_POST['content']) : '';
     $author = $_SESSION['username'];
 
     if (empty($title)) {
@@ -20,8 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    $sql = "INSERT INTO posts (title, content, author_id, author_name) VALUES ('$title', '$content', '{$_SESSION['id']}', '$author')";
-    $result = mysqli_query($connect, $sql);
+    $author_id = (int) $_SESSION['id'];
+    $sql = "INSERT INTO posts (title, content, author_id, author_name) VALUES (?, ?, ?, ?)";
+    $stmt = mysqli_prepare($connect, $sql);
+    mysqli_stmt_bind_param($stmt, 'ssis', $title, $content, $author_id, $author);
+    $result = mysqli_stmt_execute($stmt);
 
     if ($result) {
         echo "<script>alert('작성 완료되었습니다.'); location.href='index.php';</script>";
@@ -40,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
     <h1>글쓰기</h1>
     <form method="post" action="board_write.php">
+        <?php echo csrf_field(); ?>
         <h2>글 제목</h2>
         <input type="text" name="title" placeholder="제목을 입력하세요"><br>
         <h2>내용을 입력해 주세요</h2>

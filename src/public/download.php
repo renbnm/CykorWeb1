@@ -1,5 +1,6 @@
 <?php
-session_start();
+include __DIR__ . '/../app/security.php';
+start_secure_session();
 include __DIR__ . '/../app/db_connect.php';
 
 if (!isset($_SESSION['id'])) {
@@ -7,11 +8,14 @@ if (!isset($_SESSION['id'])) {
     exit;
 }
 
-$user_id = $_SESSION['id'];
-$attachment_id = $_GET['id'];
+$user_id = (int) $_SESSION['id'];
+$attachment_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-$sql = "SELECT * FROM chat_attachment WHERE id = '$attachment_id'";
-$result = mysqli_query($connect,    $sql);
+$sql = "SELECT * FROM chat_attachment WHERE id = ?";
+$stmt = mysqli_prepare($connect, $sql);
+mysqli_stmt_bind_param($stmt, 'i', $attachment_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 $attachment = mysqli_fetch_assoc($result);
 
 if (!$attachment) {
@@ -21,9 +25,12 @@ if (!$attachment) {
 
 $chat_id = $attachment['chat_id'];
 
-$sql = "SELECT * FROM chat_members
-        WHERE chat_id = '$chat_id' AND user_id = '$user_id'";
-$result = mysqli_query($connect, $sql);
+$sql = "SELECT id FROM chat_members
+        WHERE chat_id = ? AND user_id = ?";
+$stmt = mysqli_prepare($connect, $sql);
+mysqli_stmt_bind_param($stmt, 'ii', $chat_id, $user_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 $member = mysqli_fetch_assoc($result);
 
 if (!$member) {
@@ -41,11 +48,16 @@ if (!file_exists($file_path)) {
 
 if ($attachment['type'] == 'image') {
     header('Content-Type: ' . $attachment['mime_type']);
+    header('Content-Length: ' . filesize($file_path));
+    header('X-Content-Type-Options: nosniff');
     readfile($file_path);
     exit;
 }
 
-header('Content-Type: ' . $attachment['mime_type']);
-header('Content-Disposition: attachment; filename="' . $attachment['original_name'] . '"');
+$original_name = str_replace(["\r", "\n"], '', $attachment['original_name']);
+header('Content-Type: application/octet-stream');
+header("Content-Disposition: attachment; filename*=UTF-8''" . rawurlencode($original_name));
+header('Content-Length: ' . filesize($file_path));
+header('X-Content-Type-Options: nosniff');
 readfile($file_path);
 exit;
