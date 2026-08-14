@@ -59,9 +59,9 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
 
         $content = isset($data['content']) ? trim($data['content']) : '';
         $attachment_id = isset($data['attachment_id']) ? (int) $data['attachment_id'] : 0;
+        $url_id = isset($data['url_id']) ? (int) $data['url_id'] : 0;
 
-        if (($content == '' && $attachment_id == 0) || strlen($content) > 2000) {
-            $error = ['type' => 'error', 'message' => '메시지는 1자 이상 2000자 이하로 입력하세요.'];
+        if (($content == '' && $attachment_id == 0 && $url_id == 0) || strlen($content) > 2000) {            $error = ['type' => 'error', 'message' => '메시지는 1자 이상 2000자 이하로 입력하세요.'];
             $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
             return;
         }
@@ -77,6 +77,7 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
         }
         
         $attachment = null;
+        $url_preview = null;
 
         if ($attachment_id != 0) {
             $sql = "SELECT * FROM chat_attachment
@@ -91,6 +92,25 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
                 $error = [
                     'type' => 'error',
                     'message' => '첨부파일 정보를 찾을 수 없습니다.'
+                ];
+                $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
+                return;
+            }
+        }
+
+        if ($url_id != 0) {
+            $sql = "SELECT * FROM chat_url_preview
+                    WHERE id = '$url_id'
+                    AND chat_id = '$chat_id'
+                    AND uploader_id = '$user_id'
+                    AND message_id IS NULL";
+            $result = mysqli_query($connect, $sql);
+            $url_preview = mysqli_fetch_assoc($result);
+
+            if (!$url_preview) {
+                $error = [
+                    'type' => 'error',
+                    'message' => 'URL 미리보기 정보를 찾을 수 없습니다.'
                 ];
                 $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
                 return;
@@ -124,6 +144,21 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
             }
         }
 
+        if ($url_id != 0) {
+            $sql = "UPDATE chat_url_preview
+                    SET message_id = '$message_id'
+                    WHERE id = '$url_id'";
+            $result = mysqli_query($connect, $sql);
+
+            if (!$result) {
+                $error = [
+                    'type' => 'error',
+                    'message' => 'URL 미리보기 연결에 실패했습니다.'
+                ];
+                $connection->send(json_encode($error, JSON_UNESCAPED_UNICODE));
+                return;
+            }
+        }
 
         $sql = "UPDATE chat SET updated_at = NOW() WHERE id = '$chat_id'";
         mysqli_query($connect, $sql);
@@ -142,6 +177,9 @@ $worker->onMessage = function ($connection, $data) use (&$connect, &$rooms) {
             'attachment_id' => $attachment_id,
             'attachment_type' => $attachment ? $attachment['type'] : '',
             'original_name' => $attachment ? $attachment['original_name'] : '',
+            'url_id' => $url_id,
+            'url' => $url_preview ? $url_preview['url'] : '',
+            'url_title' => $url_preview ? $url_preview['title'] : '',
         ];
         $message = json_encode($message, JSON_UNESCAPED_UNICODE);
 
