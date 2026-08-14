@@ -32,6 +32,7 @@ messageForm.addEventListener('submit', async function (event) {
 
     const content = messageInput.value.trim();
     const attachment = attachmentInput.files[0];
+    const urlMatch = content.match(/https?:\/\/[^\s]+/);
 
     if (content == '' && !attachment) {
         return;
@@ -43,6 +44,7 @@ messageForm.addEventListener('submit', async function (event) {
     }
 
     let attachmentId = null;
+    let urlId = null;
 
     if (attachment) {
         const formData = new FormData();
@@ -63,6 +65,26 @@ messageForm.addEventListener('submit', async function (event) {
         }
 
         attachmentId = result.attachment_id;
+    }
+
+    if (urlMatch) {
+        const formData = new FormData();
+
+        formData.append('chat_id', chatId);
+        formData.append('url', urlMatch[0]);
+
+        const response = await fetch('url_preview.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            urlId = result.url_id;
+        } else {
+            alert(result.message);
+        }
     }
 
     socket.send(JSON.stringify({
